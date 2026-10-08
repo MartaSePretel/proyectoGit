@@ -6,13 +6,21 @@ jobs:
   comparar:
     runs-on: self-hosted
     steps:
-      - name: Depurar
+      - name: Depurar longitudes
         shell: powershell
         env:
           DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
         run: |
           Write-Host "Longitud LOCAL: $($env:LOCAL_DEV_TOKEN.Length)"
           Write-Host "Longitud DEV:   $($env:DEV_TOKEN.Length)"
+
+      - name: Depurar caracteres
+        shell: powershell
+        env:
+          DEV_TOKEN: ${{ secrets.DEV_TOKEN }}
+        run: |
+          Write-Host "LOCAL: $(($env:LOCAL_DEV_TOKEN.ToCharArray() | ForEach-Object { [int]$_ }) -join ',')"
+          Write-Host "DEV:   $(($env:DEV_TOKEN.ToCharArray() | ForEach-Object { [int]$_ }) -join ',')"
 
       - name: Comparar DEV_TOKEN con LOCAL_DEV_TOKEN
         shell: powershell
