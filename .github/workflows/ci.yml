@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Añadir línea al README
+        run: |
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          echo "Añadida feature: $BRANCH" >> README.md
+          cat README.md
+
+      - name: Commit del README (solo en push)
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add README.md
+          git commit -m "ci: actualizar README" || echo "Sin cambios"
+          git push
+
+  validate-token:
+    needs: update-readme
+    runs-on: self-hosted
+    steps:
+      - name: Validar DEV_TOKEN
+        shell: powershell
+        env:
+          SECRET_TOKEN: ${{ secrets.DEV_TOKEN }}
+        run: |
+          if ($env:SECRET_TOKEN -ceq $env:LOCAL_DEV_TOKEN) {
+            Write-Host "Token válido"
+          } else {
+            Write-Host "Token inválido"
+            exit 1
+          }
