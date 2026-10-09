@@ -36,11 +36,13 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Validar DEV_TOKEN
+        shell: powershell
         env:
           SECRET_TOKEN: ${{ secrets.DEV_TOKEN }}
         run: |
-          if [ "$SECRET_TOKEN" = "$LOCAL_DEV_TOKEN" ]; then
-            echo "Token válido"
-          else
-            echo "Token inválido"; exit 1
-          fi
+          if ($env:SECRET_TOKEN -ceq $env:LOCAL_DEV_TOKEN) {
+            Write-Host "Token válido"
+          } else {
+            Write-Host "Token inválido"
+            exit 1
+          }
