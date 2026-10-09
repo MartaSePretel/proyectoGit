@@ -1,25 +1,26 @@
-name: CI
+name: CD
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [develop]
+    branches: [main]
   push:
-    branches: [develop]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  update-readme:
+  bump-version:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Añadir línea al README
+      - name: Incrementar versión
         run: |
-          BRANCH="${{ github.head_ref || github.ref_name }}"
-          echo "Añadida feature: $BRANCH" >> README.md
+          CURRENT=$(grep -oP 'AppVersion-\K[0-9]+' README.md | head -1)
+          NEW=$((CURRENT + 1))
+          sed -i "s/^AppVersion-[0-9]\+.*/AppVersion-$NEW - $(date '+%Y-%m-%d %H:%M:%S')/" README.md
           cat README.md
 
       - name: Commit del README (solo en push)
@@ -28,18 +29,18 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add README.md
-          git commit -m "ci: actualizar README" || echo "Sin cambios"
+          git commit -m "cd: subir versión" || echo "Sin cambios"
           git push
 
   validate-token:
-    needs: update-readme
+    needs: bump-version
     runs-on: self-hosted
     steps:
-      - name: Validar DEV_TOKEN
+      - name: Validar PROD_TOKEN
         env:
-          SECRET_TOKEN: ${{ secrets.DEV_TOKEN }}
+          SECRET_TOKEN: ${{ secrets.PROD_TOKEN }}
         run: |
-          if [ "$SECRET_TOKEN" = "$LOCAL_DEV_TOKEN" ]; then
+          if [ "$SECRET_TOKEN" = "$LOCAL_PROD_TOKEN" ]; then
             echo "Token válido"
           else
             echo "Token inválido"; exit 1
