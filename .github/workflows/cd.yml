@@ -1,0 +1,49 @@
+name: CD
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Incrementar versión
+        run: |
+          CURRENT=$(grep -oP 'AppVersion-\K[0-9]+' README.md | head -1)
+          NEW=$((CURRENT + 1))
+          sed -i "s/^AppVersion-[0-9]\+.*/AppVersion-$NEW - $(date '+%Y-%m-%d %H:%M:%S')/" README.md
+          cat README.md
+
+      - name: Commit del README (solo en push)
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add README.md
+          git commit -m "cd: subir versión" || echo "Sin cambios"
+          git push
+
+  validate-token:
+    needs: update-readme
+    runs-on: self-hosted
+    steps:
+      - name: Validar DEV_TOKEN
+        shell: powershell
+        env:
+          SECRET_TOKEN: ${{ secrets.DEV_TOKEN }}
+        run: |
+          if ($env:SECRET_TOKEN -ceq $env:LOCAL_DEV_TOKEN) {
+            Write-Host "Token válido"
+          } else {
+            Write-Host "Token inválido"
+            exit 1
+          }
