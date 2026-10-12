@@ -28,7 +28,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add README.md
-          git commit -m "ci: actualizar README" || echo "Sin cambios"
+          git commit -m "ci: actualizar README" || echo "App-version 1"
           git push
 
   validate-token:
